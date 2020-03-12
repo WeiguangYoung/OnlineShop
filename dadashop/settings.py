@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'user',
-    'dtoken'
+    'dtoken',
+    'goods'
 ]
 
 MIDDLEWARE = [
@@ -126,6 +127,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+#STATICFILES_DIRS = ()
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -163,3 +165,41 @@ APPEND_SLASH = False
 WEIBO_CLIENT_ID = '853375866'
 WEIBO_CLIENT_SECRET ='7a8ac300501e4bf5340c05c98cdb6e30'
 WEIBO_REDIRECT_URI = 'http://127.0.0.1:7000/dadashop/templates/callback.html'
+
+CACHES = {
+
+    'default': {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://@127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient"
+
+        }
+    },
+
+    'goods':{
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION":"redis://@127.0.0.1:6379/5",
+        "OPTIONS":{
+            "CLIENT_CLASS": "django_redis.client.DefaultClient"
+
+        }
+
+    }
+
+}
+
+#上传图片 相关配置
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL  = '/media/'
+
+PIC_URL = 'http://127.0.0.1:8000' + MEDIA_URL
+
+
+
+
+
+
+
+
+

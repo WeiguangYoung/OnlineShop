@@ -11,7 +11,9 @@ urlpatterns = [
     #http://127.0.0.1:8000/v1/users/xiaonao9/address/0
     url(r'^/(?P<username>\w+)/address/(?P<id>\d+)$', views.AddressView.as_view()),
     #用于前端获取 微博登录地址
-    url(r'^/weibo/authorization$', views.OAuthWeiboUrlView.as_view())
+    url(r'^/weibo/authorization$', views.OAuthWeiboUrlView.as_view()),
+    #接收前端微博code
+    url(r'^/weibo/users$', views.OAuthWeiboView.as_view())
 
 
 

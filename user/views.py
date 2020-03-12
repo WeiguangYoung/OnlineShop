@@ -3,11 +3,13 @@ import json
 import random
 from urllib.parse import urlencode
 
+import requests
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from .models import UserProfile
+from .models import UserProfile, WeiboUser
 
 # Create your views here.
 from django.views.generic.base import View
@@ -202,6 +204,153 @@ class OAuthWeiboUrlView(View):
         #获取登录地址
         url = get_weibo_login_url()
         return JsonResponse({'code':200, 'oauth_url': url})
+
+
+class OAuthWeiboView(View):
+
+    def get(self,request):
+        #获取前端传来的 微博code
+        code = request.GET.get('code')
+        #向微博服务器发送请求 用code换取token
+        #websocket
+        try:
+            user_info = get_access_token(code)
+        except Exception as e:
+            print('----get_access_token error')
+            print(e)
+            result = {'code':202, 'error': {'message': 'Weibo server is busy ~'}}
+            return JsonResponse(result)
+
+        #微博用户id
+        wuid = user_info.get('uid')
+        access_token = user_info.get('access_token')
+
+        #查寻weibo用户表，判断是否是第一次光临
+        try:
+            weibo_user = WeiboUser.objects.get(wuid=wuid)
+        except Exception as e:
+            print('weibouser get error')
+            #该用户第一次用微博登录
+            #创建数据 & 暂时不绑定UserProfile
+            WeiboUser.objects.create(access_token=access_token, wuid=wuid)
+            data = {'code':'201', 'uid': wuid}
+            return JsonResponse(data)
+        else:
+            #该用户非第一次微博登录
+            #检查是否进行过绑定
+            uid = weibo_user.uid
+            if uid:
+                #之前绑定过，则认为当前为正常登陆，签发token
+                username = uid.username
+                token = make_token(username)
+                result = {'code':200, 'username':username, 'data': {'token':token.decode()}}
+                return JsonResponse(result)
+            else:
+                #之前微博登陆过，但是没有执行微博绑定注册
+                data = {'code': '201', 'uid': wuid}
+                return JsonResponse(data)
+
+        return JsonResponse({'code':200, 'error':'test'})
+
+    def post(self,  request):
+        #绑定注册
+        #json 前端将weiboid 命名为uid POST 过来
+        #返回值 跟 正常注册一样
+        data = json.loads(request.body)
+        #获取微博的用户id
+        uid = data.get('uid')
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+        phone = data.get('phone')
+        #TODO 检查参数 是否存在
+        import hashlib
+        m = hashlib.md5()
+        m.update(password.encode())
+        password_m = m.hexdigest()
+
+        try:
+            #注册用户  事务
+            with transaction.atomic():
+                user = UserProfile.objects.create(username=username,phone=phone,email=email,password=password_m)
+                weibo_user = WeiboUser.objects.get(wuid=uid)
+                #绑定外键
+                #用类属性uid 赋值
+                weibo_user.uid = user
+                #用数据库字段赋值
+                #weibo_user.uid_id = user.id
+                weibo_user.save()
+
+        except Exception as e:
+            print('---weibo register error---')
+            print(e)
+            return JsonResponse({'code':10115, 'error':{'message':'The username is existed !'}})
+
+        #签发token
+        #TODO 发邮件？
+        token = make_token(username)
+        result = {'code':200, 'username':username, 'data':{'token':token.decode()}}
+        return JsonResponse(result)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        return JsonResponse({'code':200})
+
+
+
+
+
+
+
+
+
+def get_access_token(code):
+    #向资源授权平台 换取token
+    token_url = 'https://api.weibo.com/oauth2/access_token'
+    post_data = {
+        'client_id': settings.WEIBO_CLIENT_ID,
+        'client_secret': settings.WEIBO_CLIENT_SECRET,
+        'grant_type': 'authorization_code',
+        'redirect_uri': settings.WEIBO_REDIRECT_URI,
+        'code':code
+    }
+    try:
+        #向微博服务器发送post请求
+        res = requests.post(token_url, data=post_data)
+    except Exception as e:
+        print('--weibo request error ')
+        print(e)
+        raise
+    if res.status_code == 200:
+        return json.loads(res.text)
+    raise
+
+
+
+
+
+
+
+
 
 def get_weibo_login_url():
     #response_type - code  代表启用授权码模式

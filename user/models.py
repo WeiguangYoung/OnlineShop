@@ -43,6 +43,32 @@ class Address(models.Model):
 
 
 
+class WeiboUser(models.Model):
+    #微博用户表
+    uid = models.OneToOneField(UserProfile, null=True)
+    wuid = models.CharField(max_length=50, db_index=True, verbose_name='微博用户id')
+    access_token = models.CharField(max_length=100, verbose_name='授权令牌')
+
+    class Meta:
+        db_table = 'weibo_user'
+
+    def __str__(self):
+
+        return '%s_%s' %(self.wuid, self.uid)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
