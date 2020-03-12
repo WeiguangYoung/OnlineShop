@@ -1,13 +1,12 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.generic import View
+from haystack.query import EmptySearchQuerySet
+from haystack.forms import  ModelSearchForm
 from django_redis import get_redis_connection
 import json
-from django.conf import settings
+from dadashop.settings import PIC_URL
 
 from .models import *
 
@@ -54,12 +53,11 @@ class GoodsIndexView(View):
                     catalog_dic["sku"].append(sku_dict)
                 index_data.append(catalog_dic)
                 # 写入缓存
-            #可考虑如缓存时压缩json串 zlib
             redis_conn.set("index_cache", json.dumps(index_data))
         else:
             print("使用缓存")
             index_data = json.loads(redis_index)
-        result = {"code": 200, "data": index_data, "base_url": settings.PIC_URL}
+        result = {"code": 200, "data": index_data, "base_url": PIC_URL}
 
         return JsonResponse(result)
 
@@ -100,7 +98,7 @@ class GoodsListView(View):
         except:
             result = {'code': 40200, 'error': '页数有误，小于0或者大于总页数'}
             return JsonResponse(result)
-        result = {'code': 200, 'data': page_skus_json, 'paginator':{'pagesize':page_size, 'total': len(sku_list)}, 'base_url': settings.PIC_URL}
+        result = {'code': 200, 'data': page_skus_json, 'paginator':{'pagesize':page_size, 'total': len(sku_list)}, 'base_url': PIC_URL}
         return JsonResponse(result)
 
 
@@ -202,7 +200,109 @@ class GoodsDetailView(View):
             print("使用缓存")
             sku_details = json.loads(redis_detail)
 
-        result = {'code': 200, 'data': sku_details, 'base_url': settings.PIC_URL}
+        result = {'code': 200, 'data': sku_details, 'base_url': PIC_URL}
+        return JsonResponse(result)
+
+
+# class GoodsSearchView(View):
+#     def post(self, request):
+#         """
+#         首页查询功能
+#         :param request:
+#         :return:
+#         """
+#         # 127.0.0.1:8000/v1/goods/search/
+
+#         # 获取分页的页码
+#         if request.method == "POST":
+#             page_num = int(request.POST.get('page', '1'))
+#             page_size = 9
+#             search_msg = request.POST.get('searchbox')
+#             # 字符串转码
+#             spu_query_list = SPU.objects.filter(name__contains=search_msg.encode('utf-8').decode("unicode_escape"))
+#             if spu_query_list.count() == 0:
+#                 result = {'code': 40202, 'error': '您所查询的商品不存在', }
+#                 return JsonResponse(result)
+#             sku_list = []
+#             for spu_query in spu_query_list:
+#                 skus = SKU.objects.filter(SPU_ID=spu_query.id, is_launched=True)[:]
+#                 for sku in skus:
+#                     sku_list.append(sku)
+
+#             paginator = Paginator(sku_list, page_size)
+#             # 2.3获取指定页码的数据
+#             page_skus = paginator.page(page_num)
+#             page_skus_list = []
+#             try:
+#                 for sku in page_skus:
+#                     sku_dict = dict()
+#                     sku_dict['skuid'] = sku.id
+#                     sku_dict['name'] = sku.name
+#                     sku_dict['price'] = str(sku.price)
+#                     sku_image_count = SKUImage.objects.filter(sku_id=sku.id).count()
+#                     # 如果该sku没有指定图片，则选取默认图片进行展示
+#                     if sku_image_count == 0:
+#                         sku_image = str(sku.default_image_url)
+#                     else:
+#                         sku_image = str(SKUImage.objects.get(sku_id=sku.id).image)
+#                     sku_dict['image'] = sku_image
+#                     page_skus_list.append(sku_dict)
+#                 print(len(page_skus_list))
+#             except:
+#                 result = {'code': 40200, 'data': '页数有误，小于0或者大于总页数'}
+#                 return JsonResponse(result)
+#             result = {'code': 200, 'data':  page_skus_list, 'paginator':{'pagesize':page_size, 'total': len(sku_list)}}
+#             return JsonResponse(result)
+
+
+class GoodsSearchView(View):
+    def post(self,request, load_all=True, searchqueryset=None):
+        """
+        首页查询功能
+        :param request:
+        :return:
+        """
+        # 127.0.0.1:8000/v1/goods/search/
+        from dadashop.settings import HAYSTACK_SEARCH_RESULTS_PER_PAGE
+        query = ''
+        page_size = HAYSTACK_SEARCH_RESULTS_PER_PAGE
+        results = EmptySearchQuerySet()
+        if request.POST.get('q'):
+            form = ModelSearchForm(request.POST, searchqueryset=searchqueryset, load_all=load_all)
+            if form.is_valid():
+                query = form.cleaned_data['q']
+                results = form.search()
+        else:
+            form = ModelSearchForm(searchqueryset=searchqueryset, load_all=load_all)
+
+        paginator = Paginator(results, page_size)
+        try:
+            page = paginator.page(int(request.POST.get('page', 1)))
+        except:
+            result = {'code': 40200, 'error': '页数有误，小于0或者大于总页数'}
+            return JsonResponse(result)
+
+        # 记录查询信息
+        context = {
+            'form': form,
+            'page': page,
+            'paginator': paginator,
+            'query': query,
+        }
+
+        sku_list = []
+        # print(len(page.object_list))
+        for result in page.object_list:
+            sku = {
+                'skuid': result.object.id,
+                'name': result.object.name,
+                'price': result.object.price,
+            }
+            # 获取图片
+            sku_image = str(result.object.default_image_url)
+            sku['image'] = sku_image
+            sku_list.append(sku)
+        result = {"code": 200, "data": sku_list, 'paginator': {'pagesize': page_size, 'total': len(results)}, 'base_url': PIC_URL}
         return JsonResponse(result)
 
 

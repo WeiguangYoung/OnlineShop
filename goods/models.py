@@ -62,6 +62,8 @@ class SPUSaleAttr(models.Model):
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, verbose_name="更新时间")
     SPU_id = models.ForeignKey(SPU, on_delete=models.CASCADE, verbose_name='SPU')
+    # sale_attr_value_name = models.CharField(max_length=20, verbose_name='SPU属性值名称')
+    # sale_attr_id = models.IntegerField(default=0, verbose_name='SPU销售属性ID')
     sale_attr_name = models.CharField(max_length=20, verbose_name='SPU属性名称')
 
     class Meta:
@@ -71,6 +73,7 @@ class SPUSaleAttr(models.Model):
 
     def __str__(self):
         return '%s' % (self.sale_attr_name)
+
 
 
 class SKU(models.Model):
@@ -89,8 +92,8 @@ class SKU(models.Model):
     sales = models.IntegerField(default=0, verbose_name='销量')
     comments = models.IntegerField(default=0, verbose_name='评价数')
     is_launched = models.BooleanField(default=True, verbose_name='是否上架销售')
-    default_image_url = models.ImageField(verbose_name='默认图片', default=None)
-
+    default_image_url = models.ImageField(verbose_name='默认图片',default=None)
+    version = models.IntegerField(default=0,verbose_name="库存版本")
     class Meta:
         db_table = 'DDSC_SKU'
         verbose_name = 'SKU表'
@@ -106,8 +109,8 @@ class SaleAttrValue(models.Model):
     """
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, verbose_name="更新时间")
-    sale_attr_id = models.ForeignKey(SPUSaleAttr, on_delete=models.CASCADE, verbose_name='销售属性id')
-    sku = models.ForeignKey(SKU, on_delete=models.CASCADE, verbose_name='sku', default='')
+    sale_attr_id = models.ForeignKey(SPUSaleAttr, on_delete=models.CASCADE, verbose_name='销售属性')
+    sku = models.ForeignKey(SKU, on_delete=models.CASCADE, verbose_name='sku')
     sale_attr_value_name = models.CharField(max_length=20, verbose_name='销售属性值名称')
 
     class Meta:
@@ -116,7 +119,8 @@ class SaleAttrValue(models.Model):
         verbose_name_plural = verbose_name
 
     def __str__(self):
-        return '%s - %s' % (self.sale_attr_id, self.sale_attr_value_name)
+        return '%s - %s - %s' % (self.sale_attr_id, self.sku.name, self.sale_attr_value_name)
+
 
 
 class SKUImage(models.Model):
@@ -126,8 +130,7 @@ class SKUImage(models.Model):
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, verbose_name="更新时间")
     sku_id = models.ForeignKey(SKU, on_delete=models.CASCADE, verbose_name='sku')
-    # MEDIAL_ROOT + upload_to
-    image = models.ImageField(upload_to='skuimg/', verbose_name='图片路径')
+    image = models.ImageField(verbose_name='图片路径')
 
     class Meta:
         db_table = 'DDSC_SKU_IMAGE'
@@ -136,6 +139,24 @@ class SKUImage(models.Model):
 
     def __str__(self):
         return '%s %s' % (self.sku_id.name, self.id)
+
+
+#class SKUSaleAttrValue(models.Model):
+    """
+    SKU销售属性值表
+    """
+#    create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+#    update_time = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+#    sku = models.ForeignKey(SKU, on_delete=models.CASCADE, verbose_name='sku')
+#    sale_attr_value_id = models.ForeignKey(SaleAttrValue, on_delete=models.PROTECT, verbose_name='销售属性值')
+
+#    class Meta:
+#        db_table = 'DDSC_SKU_SALE_ATTR_VALUE'
+#        verbose_name = 'SKU销售属性值表'
+#        verbose_name_plural = verbose_name
+
+#    def __str__(self):
+#        return '%s' % (self.sku,)
 
 
 class SPUSpec(models.Model):

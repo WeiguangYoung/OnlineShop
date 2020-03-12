@@ -14,23 +14,17 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url, include
-from django.conf.urls.static import static
 from django.contrib import admin
-from . import views
 from django.conf import settings
+from django.views.static import serve
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^test$',views.test),
     url(r'^v1/users', include('user.urls')),
     url(r'^v1/tokens', include('dtoken.urls')),
+    url(r'^v1/carts', include('carts.urls')),
+    url(r'^v1/orders', include('order.urls')),
     url(r'^v1/goods', include('goods.urls')),
-    url(r'^v1/carts', include('carts.urls'))
+    url(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+
 ]
-
-# /media/  ROOT找文件、图片  只在runserver有效
-# 正式上线时 请配置 nginx
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
-

@@ -137,6 +137,36 @@ class SaleAttrValueAdmin(BaseModel):
 
     search_fields = ('sale_attr_value_name',)  # 搜索字段
 
+
+# @admin.register(SKUSaleAttrValue)
+# class SKUSaleAttrValueAdmin(BaseModel):
+
+#     def save_model(self, request, obj, form, change):
+#         super().save_model(request, obj, form, change)
+#         # 删除详情页缓存
+#         redis_conn.delete("goods_%s" % obj.sku.id)
+#         print("sku.id", obj.sku.id)
+#         print("保存数据时，详情页缓存清除")
+
+#     def delete_model(self, request, obj):
+#         super().delete_model(request, obj)
+#         # 删除详情页缓存
+#         redis_conn.delete("goods_%s" % obj.sku.id)
+#         print("保存数据时，详情页缓存清除")
+
+#     list_display = ['id', 'sku', 'sale_attr_value_id',]
+#     # list_per_page设置每页显示多少条记录，默认是100条
+#     list_per_page = 20
+
+#     # ordering设置默认排序字段，创建时间降序排序
+#     ordering = ('create_time',)
+
+#     # fk_fields 设置显示外键字段
+#     fk_fields = ('sku','sale_attr_value_id',)
+
+#     search_fields = ('sku',)  # 搜索字段
+
+
 @admin.register(SKUImage)
 class SKUImageAdmin(BaseModel):
 

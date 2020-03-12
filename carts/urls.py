@@ -1,8 +1,6 @@
 from django.conf.urls import url
-from . import views
+from .views import *
 
 urlpatterns = [
-
-    url(r'^/(?P<username>\w+)$', views.CartView.as_view())
-
+    url(r'^/(?P<username>[\w]{1,11})$',CartVIew.as_view()),
 ]
