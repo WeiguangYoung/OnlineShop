@@ -24,7 +24,8 @@ urlpatterns = [
     url(r'^test$',views.test),
     url(r'^v1/users', include('user.urls')),
     url(r'^v1/tokens', include('dtoken.urls')),
-    url(r'^v1/goods', include('goods.urls'))
+    url(r'^v1/goods', include('goods.urls')),
+    url(r'^v1/carts', include('carts.urls'))
 ]
 
 # /media/  ROOT找文件、图片  只在runserver有效

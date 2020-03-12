@@ -54,6 +54,7 @@ class GoodsIndexView(View):
                     catalog_dic["sku"].append(sku_dict)
                 index_data.append(catalog_dic)
                 # 写入缓存
+            #可考虑如缓存时压缩json串 zlib
             redis_conn.set("index_cache", json.dumps(index_data))
         else:
             print("使用缓存")
