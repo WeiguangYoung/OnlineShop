@@ -1,6 +1,8 @@
 # OnlineShop
 
-**云服务地址 106.54.220.88:7000/dadashop/templates/index.html**
+**云服务地址
+
+[]: 106.54.220.88:7000/dadashop/templates/index.html**
 
 **前后端分离django + nginx + uwsgi，前端页面详见static文件夹**
 
