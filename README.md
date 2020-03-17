@@ -36,3 +36,25 @@ uWSGI==2.0.18
 
 
 
+
+
+**部分功能实现**
+
+基于OAuth 2.0授权码协议的微博第三方登录
+
+基于haystack+elasticsearch的商品搜索功能
+
+基于python-alipay-sdk的支付宝第三方支付（沙箱环境 ）
+
+基于celery实现邮件和短信的异步发送（短信使用容联云平台）
+
+基于django-cors-headers实现前端的跨域资源共享CORS
+
+基于JWT生成token进行用户身份验证以及跨平台访问
+
+基于mysql和redis的结合进行缓存的实现和数据的存储
+
+
+
+
+
